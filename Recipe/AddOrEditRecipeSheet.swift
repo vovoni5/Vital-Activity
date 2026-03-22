@@ -112,6 +112,7 @@ struct AddOrEditRecipeSheet: View {
                             ForEach($draft.steps) { $step in
                                 StepEditorRow(step: $step)
                             }
+                            
 
                             Button {
                                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -339,7 +340,7 @@ private struct StepEditorRow: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            TextField("", text: $step.action, prompt: Text("Название ингредиента").foregroundColor(AppColors.textPole))
+            TextField("", text: $step.action, prompt: Text("Опишите действие").foregroundColor(AppColors.textPole))
                 .textFieldStyle(.plain)
                 .foregroundColor(AppColors.textPrimary)
                 .padding(.vertical, 10)
@@ -347,6 +348,12 @@ private struct StepEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
+            
+            Text("Время в минутах")
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundColor(AppColors.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .multilineTextAlignment(.center)
 
             TextField("", text: Binding(
                 get: { minutesText.isEmpty ? (step.minutes > 0 ? "\(step.minutes)" : "") : minutesText },
