@@ -16,6 +16,9 @@ struct RecipeApp: App {
         let accent = UIColor(red: 0.47, green: 0.20, blue: 0.95, alpha: 1.0)
         UINavigationBar.appearance().tintColor = accent
         UIBarButtonItem.appearance().tintColor = accent
+        // Устанавливаем цвет курсора в текстовых полях
+        UITextField.appearance().tintColor = accent
+        UITextView.appearance().tintColor = accent
     }
 
     var body: some Scene {

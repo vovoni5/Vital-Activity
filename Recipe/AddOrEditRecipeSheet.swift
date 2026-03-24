@@ -251,6 +251,10 @@ private struct CenteredField: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
+                .tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.none)
+                .textContentType(.none)
         }
     }
 }
@@ -270,6 +274,10 @@ private struct IngredientEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
+                .tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.none)
+                .textContentType(.none)
 
             HStack(spacing: 10) {
                 TextField("", text: Binding(
@@ -284,6 +292,10 @@ private struct IngredientEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
+                .tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.none)
+                .textContentType(.none)
 
                 Button {
                     toggleUnitAndConvert()
@@ -400,6 +412,10 @@ private struct StepEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
+                .tint(.accentColor)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.none)
+                .textContentType(.none)
             
             Text("Время в минутах")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -419,6 +435,10 @@ private struct StepEditorRow: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .multilineTextAlignment(.center)
             .gradientInputField()
+            .tint(.accentColor)
+            .autocorrectionDisabled()
+            .textInputAutocapitalization(.none)
+            .textContentType(.none)
             .onChange(of: minutesText) { _, newValue in
                 if let value = Int(newValue), value > 0 {
                     step.minutes = value
