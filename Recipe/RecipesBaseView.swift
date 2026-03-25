@@ -1,6 +1,8 @@
 import SwiftUI
 import CoreData
 
+/// Основной экран базы рецептов.
+/// Отображает список рецептов с фильтрацией по категориям, позволяет добавлять, удалять и добавлять рецепты в рацион.
 struct RecipesBaseView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -21,6 +23,7 @@ struct RecipesBaseView: View {
     )
     private var recipes: FetchedResults<RecipeEntity>
 
+    /// Отфильтрованный список рецептов по выбранной категории.
     private var filtered: [RecipeEntity] {
         let allRecipes: [RecipeEntity] = recipes.map { $0 }
         if selectedCategory == .all {
@@ -124,7 +127,7 @@ struct RecipesBaseView: View {
                         Spacer()
                         Text("Изменения сохранены")
                             .font(.system(size: 14, weight: .medium, design: .rounded))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColors.accentPurple)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 10)
                             .background(Color.green.opacity(0.9))
@@ -139,6 +142,7 @@ struct RecipesBaseView: View {
         )
     }
 
+    /// Сохраняет изменения в Core Data и показывает подтверждение.
     private func save() {
         do {
             try viewContext.save()
@@ -146,7 +150,6 @@ struct RecipesBaseView: View {
             withAnimation {
                 showSaveConfirmation = true
             }
-            // Автоматически скрыть через 2 секунды
             DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
                 withAnimation {
                     showSaveConfirmation = false
@@ -159,6 +162,7 @@ struct RecipesBaseView: View {
     }
 }
 
+/// Список рецептов с поддержкой свайпов.
 private struct RecipesList: View {
     let recipes: [RecipeEntity]
     let onDeleteRequest: (RecipeEntity) -> Void
@@ -188,9 +192,11 @@ private struct RecipesList: View {
         .padding(.bottom, 24)
         .screenAppear()
         .background(Color.clear)
+        .tint(AppColors.accentPurple)
     }
 }
 
+/// Строка рецепта в списке.
 private struct RecipeRow: View {
     let recipe: RecipeEntity
     let onDeleteRequest: () -> Void
@@ -219,7 +225,7 @@ private struct RecipeRow: View {
                     Text("Удалить")
                         .font(.system(size: 14, weight: .bold))
                 }
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.accentPurple)
                 .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
             }
             .tint(AppColors.accentPink)
@@ -235,7 +241,7 @@ private struct RecipeRow: View {
                     Text("В рацион")
                         .font(.system(size: 14, weight: .bold))
                 }
-                .foregroundColor(.white)
+                .foregroundColor(AppColors.accentPurple)
                 .shadow(color: .black.opacity(0.3), radius: 1, x: 0, y: 1)
             }
             .tint(AppColors.accentPurple)
@@ -244,6 +250,7 @@ private struct RecipeRow: View {
     }
 }
 
+/// Состояние пустого списка рецептов.
 private struct EmptyRecipesState: View {
     var body: some View {
         CardContainer {
@@ -266,6 +273,7 @@ private struct EmptyRecipesState: View {
     }
 }
 
+/// Заголовок экрана базы рецептов.
 private struct RecipesHeader: View {
     var body: some View {
         VStack(spacing: 6) {
@@ -284,6 +292,7 @@ private struct RecipesHeader: View {
     }
 }
 
+/// Чипы категорий для фильтрации рецептов.
 private struct CategoryChips: View {
     @Binding var selected: RecipeCategory
 
@@ -341,4 +350,3 @@ private struct CategoryChips: View {
             .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
     }
 }
-

@@ -2,6 +2,7 @@ import SwiftUI
 import CoreData
 import UIKit
 
+/// Детальный просмотр рецепта с ингредиентами, шагами и кнопкой запуска таймера.
 struct RecipeDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
 
@@ -15,6 +16,7 @@ struct RecipeDetailView: View {
 
             ScrollView {
                 VStack(spacing: 14) {
+                    // Заголовок и описание рецепта
                     VStack(spacing: 8) {
                         Text(recipe.title ?? "")
                             .primaryTitle()
@@ -38,6 +40,7 @@ struct RecipeDetailView: View {
                     .padding(.top, 18)
                     .accessibilityElement(children: .contain)
 
+                    // Карточка ингредиентов
                     CardContainer {
                         VStack(spacing: 12) {
                             Text("Ингредиенты")
@@ -65,6 +68,7 @@ struct RecipeDetailView: View {
                     }
                     .accessibilityElement(children: .contain)
 
+                    // Карточка шагов с таймерами
                     CardContainer {
                         VStack(spacing: 12) {
                             Text("Таймер действий")
@@ -92,8 +96,8 @@ struct RecipeDetailView: View {
                     }
                     .accessibilityElement(children: .contain)
 
+                    // Кнопка запуска таймера приготовления
                     Button {
-                        // Переход в таймер готовки, связанный с рецептом
                         showTimer(for: recipe)
                     } label: {
                         Text("Приготовить")
@@ -138,6 +142,7 @@ struct RecipeDetailView: View {
         }
     }
 
+    /// Сохраняет изменения рецепта в Core Data.
     private func save() {
         do {
             try viewContext.save()
@@ -146,9 +151,8 @@ struct RecipeDetailView: View {
         }
     }
 
+    /// Отправляет уведомление для открытия таймера приготовления данного рецепта.
     private func showTimer(for recipe: RecipeEntity) {
-        // Навигация в SwiftUI: открываем через hidden NavigationLink-пуш.
-        // Реализация через отдельный overlay, чтобы сохранить стиль и анимации.
         NotificationCenter.default.post(
             name: .openRecipeTimer,
             object: nil,
@@ -157,6 +161,7 @@ struct RecipeDetailView: View {
     }
 }
 
+/// Строка ингредиента в режиме чтения с переключением единиц измерения.
 private struct IngredientReadOnlyRow: View {
     let ingredient: Ingredient
     @State private var unit: QuantityUnit = .grams
@@ -174,6 +179,7 @@ private struct IngredientReadOnlyRow: View {
                 .multilineTextAlignment(.center)
                 .accessibilityLabel("Количество: \(displayQuantity)")
 
+            // Кнопка переключения единиц измерения
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     switch unit {
@@ -214,6 +220,7 @@ private struct IngredientReadOnlyRow: View {
         .accessibilityElement(children: .contain)
     }
 
+    /// Отображаемое количество в выбранной единице измерения.
     private var displayQuantity: String {
         let value: Double
         switch unit {
@@ -229,6 +236,7 @@ private struct IngredientReadOnlyRow: View {
     }
 }
 
+/// Строка шага приготовления в режиме чтения.
 private struct StepReadOnlyRow: View {
     let step: CookingStep
 
@@ -261,5 +269,6 @@ private struct StepReadOnlyRow: View {
 }
 
 extension Notification.Name {
+    /// Уведомление для открытия таймера рецепта.
     static let openRecipeTimer = Notification.Name("openRecipeTimer")
 }
