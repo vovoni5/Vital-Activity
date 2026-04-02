@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// Черновик рецепта, используемый для создания или редактирования.
+/// Содержит все поля, которые пользователь может редактировать в форме.
 struct RecipeDraft: Equatable {
     var title: String = ""
     var detailsText: String = ""
@@ -8,11 +10,14 @@ struct RecipeDraft: Equatable {
     var steps: [CookingStep] = []
 }
 
+/// Режим работы листа: создание нового рецепта или редактирование существующего.
 enum AddEditMode {
     case create
     case edit(existing: RecipeEntity)
 }
 
+/// Лист для создания или редактирования рецепта.
+/// Содержит форму с полями названия, описания, категории, ингредиентов и шагов с таймерами.
 struct AddOrEditRecipeSheet: View {
     @Environment(\.dismiss) private var dismiss
 
@@ -22,6 +27,9 @@ struct AddOrEditRecipeSheet: View {
     @State private var draft: RecipeDraft
     @State private var validationError: String?
 
+    /// Инициализатор, подготавливающий черновик в зависимости от режима.
+    /// - При создании используется пустой черновик.
+    /// - При редактировании данные заполняются из переданного RecipeEntity.
     init(mode: AddEditMode, onSave: @escaping (RecipeDraft) -> Void) {
         self.mode = mode
         self.onSave = onSave
@@ -230,6 +238,8 @@ struct AddOrEditRecipeSheet: View {
     }
 }
 
+/// Поле ввода с центрированным заголовком и градиентной обводкой.
+/// Используется для ввода названия рецепта, описания и других текстовых данных.
 private struct CenteredField: View {
     let title: String
     @Binding var text: String
@@ -259,6 +269,8 @@ private struct CenteredField: View {
     }
 }
 
+/// Строка редактирования ингредиента с возможностью переключения единиц измерения.
+/// Позволяет ввести название и количество, а также переключаться между граммами, столовыми ложками и штуками.
 private struct IngredientEditorRow: View {
     @Binding var ingredient: Ingredient
     @State private var unit: QuantityUnit = .grams
@@ -328,6 +340,7 @@ private struct IngredientEditorRow: View {
         }
     }
 
+    /// Отформатированное значение количества в текущей единице измерения.
     private var formattedDefault: String {
         let base = ingredient.grams
         let value: Double
@@ -343,6 +356,7 @@ private struct IngredientEditorRow: View {
         return format(value)
     }
 
+    /// Переключает единицу измерения и конвертирует значение.
     private func toggleUnitAndConvert() {
         let currentValue: Double
         if let parsed = parse(quantityText.isEmpty ? formattedDefault : quantityText) {
@@ -388,16 +402,19 @@ private struct IngredientEditorRow: View {
         }
     }
 
+    /// Парсит строку в Double, заменяя запятую на точку.
     private func parse(_ s: String) -> Double? {
         let cleaned = s.replacingOccurrences(of: ",", with: ".")
         return Double(cleaned)
     }
 
+    /// Форматирует число в строку с ограничением дробных цифр.
     private func format(_ v: Double) -> String {
         UnitConverter.formatQuantity(v, maxFractionDigits: 2)
     }
 }
 
+/// Строка редактирования шага приготовления с полем действия и временем в минутах.
 private struct StepEditorRow: View {
     @Binding var step: CookingStep
     @State private var minutesText: String = ""

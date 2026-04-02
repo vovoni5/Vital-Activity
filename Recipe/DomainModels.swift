@@ -1,5 +1,6 @@
 import Foundation
 
+/// Категории рецептов, используемые для фильтрации и классификации.
 enum RecipeCategory: String, CaseIterable, Identifiable {
     case all = "Все рецепты"
     case breakfast = "Завтраки"
@@ -12,6 +13,7 @@ enum RecipeCategory: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Значение для хранения в Core Data (без локализации).
     var storageValue: String {
         switch self {
         case .all: return "Все"
@@ -20,6 +22,7 @@ enum RecipeCategory: String, CaseIterable, Identifiable {
     }
 }
 
+/// Ингредиент рецепта с названием и количеством в граммах.
 struct Ingredient: Codable, Hashable, Identifiable {
     var id: UUID = UUID()
     var name: String
@@ -27,12 +30,14 @@ struct Ingredient: Codable, Hashable, Identifiable {
     var grams: Double
 }
 
+/// Шаг приготовления с описанием действия и временем в минутах.
 struct CookingStep: Codable, Hashable, Identifiable {
     var id: UUID = UUID()
     var action: String
     var minutes: Int
 }
 
+/// Единицы измерения количества ингредиентов.
 enum QuantityUnit: String, CaseIterable, Identifiable {
     case grams = "г"
     case tbsp = "ст. л."
@@ -41,6 +46,7 @@ enum QuantityUnit: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// Конвертер единиц измерения для ингредиентов.
 enum UnitConverter {
     /// Универсальная бытовая конверсия: 1 столовая ложка ≈ 15 г.
     static let gramsPerTbsp: Double = 15.0
@@ -48,18 +54,22 @@ enum UnitConverter {
     /// Условная бытовая конверсия для штук (например, среднего продукта) — 1 шт ≈ 50 г.
     static let gramsPerPiece: Double = 50.0
 
+    /// Конвертирует граммы в столовые ложки.
     static func gramsToTbsp(_ grams: Double) -> Double {
         grams / gramsPerTbsp
     }
 
+    /// Конвертирует столовые ложки в граммы.
     static func tbspToGrams(_ tbsp: Double) -> Double {
         tbsp * gramsPerTbsp
     }
 
+    /// Конвертирует граммы в штуки.
     static func gramsToPieces(_ grams: Double) -> Double {
         grams / gramsPerPiece
     }
 
+    /// Конвертирует штуки в граммы.
     static func piecesToGrams(_ pieces: Double) -> Double {
         pieces * gramsPerPiece
     }

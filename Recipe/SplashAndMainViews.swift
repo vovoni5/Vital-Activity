@@ -2,6 +2,7 @@ import SwiftUI
 
 // MARK: - Splash
 
+/// Экран заставки с анимированным логотипом и приветственным текстом.
 struct SplashView: View {
     @State private var glow = false
 
@@ -37,6 +38,7 @@ struct SplashView: View {
 
 // MARK: - Главное меню
 
+/// Главный экран меню с навигацией по основным разделам приложения.
 struct MainMenuView: View {
     var body: some View {
         ZStack {
