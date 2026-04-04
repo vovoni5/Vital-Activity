@@ -6,23 +6,6 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		A1B2C3D4E5F60123456789A0 /* Recipe/RecipeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789A1 /* Recipe/RecipeApp.swift */; };
-		A1B2C3D4E5F60123456789A2 /* Recipe/ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789A3 /* Recipe/ContentView.swift */; };
-		A1B2C3D4E5F60123456789A4 /* Recipe/Persistence.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789A5 /* Recipe/Persistence.swift */; };
-		A1B2C3D4E5F60123456789A6 /* Recipe/StyleSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789A7 /* Recipe/StyleSystem.swift */; };
-		A1B2C3D4E5F60123456789A8 /* Recipe/SplashAndMainViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789A9 /* Recipe/SplashAndMainViews.swift */; };
-		A1B2C3D4E5F60123456789AA /* Recipe/DomainModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789AB /* Recipe/DomainModels.swift */; };
-		A1B2C3D4E5F60123456789AC /* Recipe/CoreDataSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789AD /* Recipe/CoreDataSupport.swift */; };
-		A1B2C3D4E5F60123456789AE /* Recipe/RecipesBaseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789AF /* Recipe/RecipesBaseView.swift */; };
-		A1B2C3D4E5F60123456789B0 /* Recipe/AddOrEditRecipeSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B1 /* Recipe/AddOrEditRecipeSheet.swift */; };
-		A1B2C3D4E5F60123456789B2 /* Recipe/RecipeDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B3 /* Recipe/RecipeDetailView.swift */; };
-		A1B2C3D4E5F60123456789B4 /* Recipe/MealPlanPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B5 /* Recipe/MealPlanPickerSheet.swift */; };
-		A1B2C3D4E5F60123456789B6 /* Recipe/MenuPlannerViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B7 /* Recipe/MenuPlannerViews.swift */; };
-		A1B2C3D4E5F60123456789B8 /* Recipe/CookingTimerViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789B9 /* Recipe/CookingTimerViews.swift */; };
-		A1B2C3D4E5F60123456789BA /* Recipe/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60123456789BB /* Recipe/Assets.xcassets */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXContainerItemProxy section */
 		D5457FC72F618D720040DFAF /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -278,7 +261,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1B2C3D4E5F60123456789BA /* Recipe/Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -303,19 +285,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1B2C3D4E5F60123456789A0 /* Recipe/RecipeApp.swift in Sources */,
-				A1B2C3D4E5F60123456789A2 /* Recipe/ContentView.swift in Sources */,
-				A1B2C3D4E5F60123456789A4 /* Recipe/Persistence.swift in Sources */,
-				A1B2C3D4E5F60123456789A6 /* Recipe/StyleSystem.swift in Sources */,
-				A1B2C3D4E5F60123456789A8 /* Recipe/SplashAndMainViews.swift in Sources */,
-				A1B2C3D4E5F60123456789AA /* Recipe/DomainModels.swift in Sources */,
-				A1B2C3D4E5F60123456789AC /* Recipe/CoreDataSupport.swift in Sources */,
-				A1B2C3D4E5F60123456789AE /* Recipe/RecipesBaseView.swift in Sources */,
-				A1B2C3D4E5F60123456789B0 /* Recipe/AddOrEditRecipeSheet.swift in Sources */,
-				A1B2C3D4E5F60123456789B2 /* Recipe/RecipeDetailView.swift in Sources */,
-				A1B2C3D4E5F60123456789B4 /* Recipe/MealPlanPickerSheet.swift in Sources */,
-				A1B2C3D4E5F60123456789B6 /* Recipe/MenuPlannerViews.swift in Sources */,
-				A1B2C3D4E5F60123456789B8 /* Recipe/CookingTimerViews.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

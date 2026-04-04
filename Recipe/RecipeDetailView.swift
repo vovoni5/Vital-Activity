@@ -16,7 +16,7 @@ struct RecipeDetailView: View {
 
             ScrollView {
                 VStack(spacing: 14) {
-                    // Заголовок и описание рецепта
+                    // Заголовок, ссылка и описание рецепта
                     VStack(spacing: 8) {
                         Text(recipe.title ?? "")
                             .primaryTitle()
@@ -24,17 +24,44 @@ struct RecipeDetailView: View {
                             .accessibilityLabel("Название рецепта: \(recipe.title ?? "")")
                             .accessibilityAddTraits(.isHeader)
 
-                        if let desc = recipe.detailsText, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                            TextWithLinks(
-                                text: desc,
-                                uiFont: UIFont(name: AppFonts.subtitle, size: 16) ?? UIFont.systemFont(ofSize: 16),
-                                color: AppColors.textSecondary,
-                                alignment: .center
-                            )
+                        if let link = recipe.link, !link.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            let displayText = link.truncatedLink(maxLength: 50)
+                            // Пытаемся создать URL из строки, добавляем схему при необходимости
+                            let url: URL? = {
+                                if let url = URL(string: link) {
+                                    return url
+                                }
+                                if !link.lowercased().hasPrefix("http://") && !link.lowercased().hasPrefix("https://") {
+                                    return URL(string: "https://" + link)
+                                }
+                                return nil
+                            }()
+                            
+                            Button {
+                                if let url = url {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                Text(displayText)
+                                    .font(Font(UIFont(name: AppFonts.subtitle, size: 16) ?? UIFont.systemFont(ofSize: 16)))
+                                    .foregroundColor(.blue)
+                                    .multilineTextAlignment(.center)
+                                    .lineLimit(1)
+                            }
                             .frame(maxWidth: .infinity)
-                            .multilineTextAlignment(.center)
+                            .buttonStyle(.plain)
                             .animatedText()
-                            .accessibilityLabel("Описание рецепта: \(desc)")
+                            .accessibilityLabel("Ссылка на рецепт: \(link)")
+                        }
+
+                        if let desc = recipe.detailsText, !desc.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            Text(desc)
+                                .font(Font(UIFont(name: AppFonts.subtitle, size: 16) ?? UIFont.systemFont(ofSize: 16)))
+                                .foregroundColor(AppColors.textSecondary)
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
+                                .animatedText()
+                                .accessibilityLabel("Описание рецепта: \(desc)")
                         }
                     }
                     .padding(.top, 18)
@@ -133,6 +160,7 @@ struct RecipeDetailView: View {
         .sheet(isPresented: $showEditSheet) {
             AddOrEditRecipeSheet(mode: .edit(existing: recipe)) { draft in
                 recipe.title = draft.title
+                recipe.link = draft.link
                 recipe.detailsText = draft.detailsText
                 recipe.category = draft.category.rawValue
                 recipe.ingredients = draft.ingredients
@@ -161,10 +189,9 @@ struct RecipeDetailView: View {
     }
 }
 
-/// Строка ингредиента в режиме чтения с переключением единиц измерения.
+/// Строка ингредиента в режиме чтения с отображением сохранённой единицы измерения.
 private struct IngredientReadOnlyRow: View {
     let ingredient: Ingredient
-    @State private var unit: QuantityUnit = .grams
 
     var body: some View {
         VStack(spacing: 10) {
@@ -179,20 +206,11 @@ private struct IngredientReadOnlyRow: View {
                 .multilineTextAlignment(.center)
                 .accessibilityLabel("Количество: \(displayQuantity)")
 
-            // Кнопка переключения единиц измерения
+            // Кнопка отображения единицы измерения (неактивна)
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    switch unit {
-                    case .grams:
-                        unit = .tbsp
-                    case .tbsp:
-                        unit = .pieces
-                    case .pieces:
-                        unit = .grams
-                    }
-                }
+                // Ничего не делаем — переключение отключено
             } label: {
-                Text(unit.rawValue)
+                Text(ingredient.unit.rawValue)
                     .font(.system(size: 14, weight: .semibold, design: .rounded))
                     .foregroundColor(.white)
                     .frame(width: 90, height: 36, alignment: .center)
@@ -207,8 +225,9 @@ private struct IngredientReadOnlyRow: View {
                     .cornerRadius(14)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Переключить единицу измерения")
-            .accessibilityHint("Переключает между граммами, столовыми ложками и штуками")
+            .disabled(true)
+            .accessibilityLabel("Единица измерения: \(ingredient.unit.rawValue)")
+            .accessibilityHint("Переключение единиц измерения отключено в режиме просмотра")
         }
         .padding(.vertical, 6)
         .glassEffect(.clear.tint(.white.opacity(0.05)), in: .rect(cornerRadius: 18))
@@ -216,19 +235,10 @@ private struct IngredientReadOnlyRow: View {
         .accessibilityElement(children: .contain)
     }
 
-    /// Отображаемое количество в выбранной единице измерения.
+    /// Отображаемое количество в сохранённой единице измерения.
     private var displayQuantity: String {
-        let value: Double
-        switch unit {
-        case .grams:
-            value = ingredient.grams
-        case .tbsp:
-            value = UnitConverter.gramsToTbsp(ingredient.grams)
-        case .pieces:
-            value = UnitConverter.gramsToPieces(ingredient.grams)
-        }
-        let formatted = UnitConverter.formatQuantity(value, maxFractionDigits: 2)
-        return "\(formatted) \(unit.rawValue)"
+        let formatted = UnitConverter.formatQuantity(ingredient.quantity, maxFractionDigits: 2)
+        return "\(formatted) \(ingredient.unit.rawValue)"
     }
 }
 

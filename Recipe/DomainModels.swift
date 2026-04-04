@@ -22,12 +22,87 @@ enum RecipeCategory: String, CaseIterable, Identifiable {
     }
 }
 
-/// Ингредиент рецепта с названием и количеством в граммах.
+/// Ингредиент рецепта с названием, количеством и единицей измерения.
 struct Ingredient: Codable, Hashable, Identifiable {
     var id: UUID = UUID()
     var name: String
-    /// Значение хранится в граммах (база), конвертация только для отображения.
-    var grams: Double
+    /// Количество в выбранной единице измерения.
+    var quantity: Double
+    /// Единица измерения количества.
+    var unit: QuantityUnit
+    
+    /// Количество в граммах (вычисляемое свойство для обратной совместимости).
+    var grams: Double {
+        get {
+            switch unit {
+            case .grams:
+                return quantity
+            case .tbsp:
+                return UnitConverter.tbspToGrams(quantity)
+            case .pieces:
+                return UnitConverter.piecesToGrams(quantity)
+            }
+        }
+        set {
+            // При установке граммов пересчитываем quantity в текущей unit
+            switch unit {
+            case .grams:
+                quantity = newValue
+            case .tbsp:
+                quantity = UnitConverter.gramsToTbsp(newValue)
+            case .pieces:
+                quantity = UnitConverter.gramsToPieces(newValue)
+            }
+        }
+    }
+    
+    init(id: UUID = UUID(), name: String, quantity: Double, unit: QuantityUnit) {
+        self.id = id
+        self.name = name
+        self.quantity = quantity
+        self.unit = unit
+    }
+    
+    /// Инициализатор для обратной совместимости со старыми данными (только граммы).
+    init(id: UUID = UUID(), name: String, grams: Double) {
+        self.id = id
+        self.name = name
+        self.quantity = grams
+        self.unit = .grams
+    }
+    
+    private enum CodingKeys: String, CodingKey {
+        case id, name, quantity, unit, grams
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decodeIfPresent(UUID.self, forKey: .id) ?? UUID()
+        name = try container.decode(String.self, forKey: .name)
+        
+        // Пытаемся декодировать quantity и unit (новый формат)
+        if let quantity = try? container.decode(Double.self, forKey: .quantity),
+           let unitRaw = try? container.decode(String.self, forKey: .unit),
+           let unit = QuantityUnit(rawValue: unitRaw) {
+            self.quantity = quantity
+            self.unit = unit
+        } else {
+            // Старый формат: только граммы
+            let grams = try container.decode(Double.self, forKey: .grams)
+            self.quantity = grams
+            self.unit = .grams
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(quantity, forKey: .quantity)
+        try container.encode(unit.rawValue, forKey: .unit)
+        // Для обратной совместимости также кодируем grams
+        try container.encode(grams, forKey: .grams)
+    }
 }
 
 /// Шаг приготовления с описанием действия и временем в минутах.
@@ -83,6 +158,24 @@ enum UnitConverter {
         formatter.decimalSeparator = "."
         formatter.groupingSeparator = ""
         return formatter.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
+}
+
+extension String {
+    /// Обрезает ссылку для отображения, оставляя только первую строку (до первого перевода строки) и ограничивая длину.
+    /// Если ссылка многострочная, возвращается только первая строка.
+    /// Если длина превышает maxLength, добавляется многоточие.
+    func truncatedLink(maxLength: Int = 50) -> String {
+        // Убираем пробелы и переносы строк по краям
+        let trimmed = self.trimmingCharacters(in: .whitespacesAndNewlines)
+        // Берем первую строку
+        let firstLine = trimmed.components(separatedBy: .newlines).first ?? trimmed
+        // Если длина превышает maxLength, обрезаем и добавляем многоточие
+        if firstLine.count > maxLength {
+            let index = firstLine.index(firstLine.startIndex, offsetBy: maxLength - 3)
+            return String(firstLine[..<index]) + "..."
+        }
+        return firstLine
     }
 }
 

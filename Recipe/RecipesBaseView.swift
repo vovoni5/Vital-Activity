@@ -79,6 +79,7 @@ struct RecipesBaseView: View {
                 let newRecipe = RecipeEntity(context: viewContext)
                 newRecipe.id = UUID()
                 newRecipe.title = draft.title.trimmingCharacters(in: .whitespacesAndNewlines)
+                newRecipe.link = draft.link.trimmingCharacters(in: .whitespacesAndNewlines)
                 newRecipe.detailsText = draft.detailsText.trimmingCharacters(in: .whitespacesAndNewlines)
                 newRecipe.category = draft.category.rawValue
                 newRecipe.ingredients = draft.ingredients
@@ -140,6 +141,7 @@ struct RecipesBaseView: View {
             }
             .animation(.easeInOut(duration: 0.3), value: showSaveConfirmation)
         )
+        .withActiveTimerPanel(isTimerScreen: false)
     }
 
     /// Сохраняет изменения в Core Data и показывает подтверждение.

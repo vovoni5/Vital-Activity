@@ -22,9 +22,10 @@ import CoreData
 @main
 struct RecipeApp: App {
     let persistenceController = PersistenceController.shared
+    @StateObject private var timerManager = TimerManager.shared
 
     init() {
-        let accent = UIColor(named: "AccentColor") ?? UIColor(red: 0.47, green: 0.20, blue: 0.95, alpha: 1.0)
+        let accent = UIColor(red: 0.47, green: 0.20, blue: 0.95, alpha: 1.0)
         // Устанавливаем акцентный цвет для всех системных элементов
         UIView.appearance().tintColor = accent
         UINavigationBar.appearance().tintColor = accent
@@ -38,6 +39,7 @@ struct RecipeApp: App {
         WindowGroup {
             ContentView()
                 .environment(\.managedObjectContext, persistenceController.container.viewContext)
+                .environmentObject(timerManager)
         }
     }
 }

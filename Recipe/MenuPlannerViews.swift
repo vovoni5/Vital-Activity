@@ -114,6 +114,7 @@ struct MenuPlannerListView: View {
         } message: {
             Text("Все связи внутри рациона будут удалены.")
         }
+        .withActiveTimerPanel(isTimerScreen: false)
     }
 
     private func save() {

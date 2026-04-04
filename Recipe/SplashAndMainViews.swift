@@ -94,6 +94,7 @@ struct MainMenuView: View {
             }
         }
         .navigationBarHidden(true)
+        .withActiveTimerPanel(isTimerScreen: false)
     }
 }
 

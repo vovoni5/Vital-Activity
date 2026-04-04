@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="1" systemVersion="11A491" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithCloudKit="false" userDefinedModelVersionIdentifier="">
-    <entity name="RecipeEntity" representedClassName="RecipeEntity" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="title" optional="NO" attributeType="String"/>
-        <attribute name="detailsText" optional="YES" attributeType="String"/>
-        <attribute name="category" optional="NO" attributeType="String"/>
-        <attribute name="ingredientsData" optional="YES" attributeType="Binary"/>
-        <attribute name="stepsData" optional="YES" attributeType="Binary"/>
-    </entity>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="24512" systemVersion="25D125" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
     <entity name="MealPlanEntity" representedClassName="MealPlanEntity" syncable="YES" codeGenerationType="class">
-        <attribute name="id" optional="NO" attributeType="UUID" usesScalarValueType="NO"/>
-        <attribute name="name" optional="NO" attributeType="String"/>
+        <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="name" attributeType="String"/>
         <attribute name="recipeIDsData" optional="YES" attributeType="Binary"/>
     </entity>
-    <elements>
-        <element name="RecipeEntity" positionX="-63" positionY="-18" width="128" height="89"/>
-        <element name="MealPlanEntity" positionX="140" positionY="-18" width="128" height="74"/>
-    </elements>
+    <entity name="RecipeEntity" representedClassName="RecipeEntity" syncable="YES" codeGenerationType="class">
+            <attribute name="category" attributeType="String"/>
+            <attribute name="detailsText" optional="YES" attributeType="String"/>
+            <attribute name="link" optional="YES" attributeType="String"/>
+            <attribute name="id" attributeType="UUID" usesScalarValueType="NO"/>
+            <attribute name="ingredientsData" optional="YES" attributeType="Binary"/>
+            <attribute name="stepsData" optional="YES" attributeType="Binary"/>
+            <attribute name="title" attributeType="String"/>
+        </entity>
 </model>

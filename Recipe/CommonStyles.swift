@@ -205,6 +205,23 @@ struct CardContainer<Content: View>: View {
     }
 }
 
+/// Контейнер для таймеров с единым стилем (белый фон, тень, закругления).
+struct TimerContainer<Content: View>: View {
+    let content: Content
+    
+    init(@ViewBuilder content: () -> Content) {
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding(16)
+            .frame(maxWidth: .infinity)
+            .glassEffect(.clear.tint(.white.opacity(0.0)), in: .rect(cornerRadius: 20))
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
+    }
+}
+
 // MARK: - Расширения View
 
 extension View {
@@ -241,6 +258,11 @@ extension View {
     /// Применяет стиль поля ввода с градиентной обводкой.
     func gradientInputField() -> some View {
         modifier(GradientInputFieldStyle())
+    }
+    
+    /// Оборачивает контент в контейнер таймера (белый фон, тень, закругления).
+    func timerContainer() -> some View {
+        TimerContainer { self }
     }
 }
 

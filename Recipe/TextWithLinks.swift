@@ -7,8 +7,21 @@ struct TextWithLinks: View {
     let uiFont: UIFont
     let color: Color
     let alignment: NSTextAlignment
+    /// Если указан, весь текст будет ссылкой на этот URL (даже если текст обрезан).
+    let actualURL: URL?
+    /// Максимальное количество строк (0 = неограниченно). Если 1, текст обрежется с многоточием.
+    let maxLines: Int
 
     @State private var height: CGFloat = 0
+
+    init(text: String, uiFont: UIFont, color: Color, alignment: NSTextAlignment, actualURL: URL? = nil, maxLines: Int = 0) {
+        self.text = text
+        self.uiFont = uiFont
+        self.color = color
+        self.alignment = alignment
+        self.actualURL = actualURL
+        self.maxLines = maxLines
+    }
 
     var body: some View {
         GeometryReader { geometry in
@@ -17,6 +30,8 @@ struct TextWithLinks: View {
                 uiFont: uiFont,
                 color: color,
                 alignment: alignment,
+                actualURL: actualURL,
+                maxLines: maxLines,
                 width: geometry.size.width,
                 height: $height
             )
@@ -31,6 +46,8 @@ private struct InternalTextView: UIViewRepresentable {
     let uiFont: UIFont
     let color: Color
     let alignment: NSTextAlignment
+    let actualURL: URL?
+    let maxLines: Int
     let width: CGFloat
     @Binding var height: CGFloat
 
@@ -38,17 +55,20 @@ private struct InternalTextView: UIViewRepresentable {
         let textView = UITextView()
         textView.isEditable = false
         textView.isScrollEnabled = false
+        textView.isSelectable = true // Включаем выделение, чтобы ссылки были кликабельны
+        textView.allowsEditingTextAttributes = false // Отключаем редактирование атрибутов текста
         textView.backgroundColor = .clear
         textView.textContainerInset = .zero
         textView.textContainer.lineFragmentPadding = 0
         textView.textContainer.widthTracksTextView = true
         textView.textContainer.heightTracksTextView = true
         textView.textContainer.lineBreakMode = .byWordWrapping
-        textView.textContainer.maximumNumberOfLines = 0
+        textView.textContainer.maximumNumberOfLines = maxLines
         textView.dataDetectorTypes = .link
         textView.isUserInteractionEnabled = true
         textView.delegate = context.coordinator
         textView.textAlignment = alignment
+        textView.tintColor = .blue // Цвет ссылок
         // Prevent horizontal expansion
         textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         textView.setContentHuggingPriority(.defaultHigh, for: .horizontal)
@@ -63,11 +83,16 @@ private struct InternalTextView: UIViewRepresentable {
         attributedString.addAttribute(.font, value: uiFont, range: range)
         attributedString.addAttribute(.foregroundColor, value: UIColor(color), range: range)
 
-        // Detect URLs and add link attribute (UITextView will automatically style them)
-        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-        detector?.enumerateMatches(in: text, options: [], range: range) { match, _, _ in
-            if let matchRange = match?.range {
-                attributedString.addAttribute(.link, value: match?.url as Any, range: matchRange)
+        // Если передан actualURL, добавляем ссылку на весь текст
+        if let actualURL = actualURL {
+            attributedString.addAttribute(.link, value: actualURL, range: range)
+        } else {
+            // Detect URLs and add link attribute (UITextView will automatically style them)
+            let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+            detector?.enumerateMatches(in: text, options: [], range: range) { match, _, _ in
+                if let matchRange = match?.range {
+                    attributedString.addAttribute(.link, value: match?.url as Any, range: matchRange)
+                }
             }
         }
 
@@ -83,7 +108,7 @@ private struct InternalTextView: UIViewRepresentable {
         // Ensure width tracking is enabled
         uiView.textContainer.widthTracksTextView = true
         uiView.textContainer.lineBreakMode = .byWordWrapping
-        uiView.textContainer.maximumNumberOfLines = 0
+        uiView.textContainer.maximumNumberOfLines = maxLines
 
         // Adjust height
         let size = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
@@ -104,6 +129,10 @@ private struct InternalTextView: UIViewRepresentable {
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
             if case .link(let url) = textItem.content {
                 UIApplication.shared.open(url)
+                // После открытия ссылки сбрасываем выделение асинхронно
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    textView.selectedTextRange = nil
+                }
             }
             return nil // suppress default action
         }
@@ -111,6 +140,15 @@ private struct InternalTextView: UIViewRepresentable {
         // Fallback for earlier versions (though deployment target is 26.2, this won't be called)
         func textView(_ textView: UITextView, shouldInteractWith URL: URL, in characterRange: NSRange) -> Bool {
             UIApplication.shared.open(URL)
+            // После открытия ссылки сбрасываем выделение асинхронно
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                textView.selectedTextRange = nil
+            }
+            return false
+        }
+
+        // Запрещаем изменение выделения текста, чтобы предотвратить визуальное выделение
+        func textView(_ textView: UITextView, shouldChangeSelection selectedRange: NSRange) -> Bool {
             return false
         }
     }

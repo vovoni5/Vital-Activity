@@ -67,6 +67,7 @@ struct CookingTimerRootView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .withActiveTimerPanel(isTimerScreen: false)
     }
 }
 
@@ -74,6 +75,7 @@ struct CookingTimerRootView: View {
 /// Управляет состоянием таймеров для каждого шага приготовления, обновляет их каждую секунду и воспроизводит звук по завершении.
 struct CookingTimerRecipeView: View {
     @ObservedObject var recipe: RecipeEntity
+    @EnvironmentObject private var timerManager: TimerManager
 
     @State private var timers: [StepTimerState] = []
     @State private var timerSubscription: Cancellable?
@@ -97,9 +99,14 @@ struct CookingTimerRecipeView: View {
                 ScrollView {
                     LazyVStack(spacing: 12) {
                         ForEach($timers) { $timer in
-                            StepTimerCard(timer: $timer) {
-                                playTripleBeep()
-                            }
+                            StepTimerCard(
+                                timer: $timer,
+                                recipeTitle: recipe.title ?? "Рецепт",
+                                recipeID: recipe.objectID,
+                                onFinished: {
+                                    playTripleBeep()
+                                }
+                            )
                             .onChange(of: timer.isRunning) { _, newValue in
                                 updateTimerSubscription()
                             }
@@ -136,11 +143,28 @@ struct CookingTimerRecipeView: View {
             timerSubscription?.cancel()
             timerSubscription = nil
         }
+        .withActiveTimerPanel(isTimerScreen: true)
     }
 
     /// Сбрасывает таймеры на основе шагов рецепта.
+    /// Восстанавливает сохранённое состояние из TimerManager, если оно есть.
     private func resetTimers() {
-        timers = recipe.steps.map { StepTimerState(stepID: $0.id, action: $0.action, totalSeconds: max(0, $0.minutes) * 60) }
+        timers = recipe.steps.map { step in
+            if let saved = timerManager.getTimerState(for: step.id) {
+                // Восстанавливаем состояние из сохранённого таймера
+                return StepTimerState(
+                    stepID: saved.stepID,
+                    action: saved.stepAction,
+                    totalSeconds: saved.totalSeconds,
+                    remainingSeconds: saved.remainingSeconds,
+                    isRunning: saved.isRunning,
+                    isDone: saved.remainingSeconds <= 0
+                )
+            } else {
+                // Создаём новый таймер с начальным состоянием
+                return StepTimerState(stepID: step.id, action: step.action, totalSeconds: max(0, step.minutes) * 60)
+            }
+        }
     }
 
     /// Обновляет подписку на таймер в зависимости от того, есть ли запущенные таймеры.
@@ -202,19 +226,32 @@ struct StepTimerState: Identifiable, Equatable {
         self.isDone = false
         self.justFinishedToken = nil
     }
+    
+    init(stepID: UUID, action: String, totalSeconds: Int, remainingSeconds: Int, isRunning: Bool, isDone: Bool) {
+        self.stepID = stepID
+        self.action = action
+        self.totalSeconds = totalSeconds
+        self.remainingSeconds = remainingSeconds
+        self.isRunning = isRunning
+        self.isDone = isDone
+        self.justFinishedToken = nil
+    }
 }
 
 /// Карточка таймера для отображения состояния одного шага.
-/// Показывает действие, оставшееся время, кнопку управления и анимацию завершения.
+/// Показывает действие, оставшееся время, две круглые кнопки управления (плей/пауза и сброс) и анимацию завершения.
 private struct StepTimerCard: View {
     @Binding var timer: StepTimerState
+    var recipeTitle: String
+    var recipeID: NSManagedObjectID
     var onFinished: () -> Void
+    @EnvironmentObject private var timerManager: TimerManager
 
     @State private var finishedPulse = false
 
     var body: some View {
-        CardContainer {
-            VStack(spacing: 12) {
+        TimerContainer {
+            VStack(spacing: 16) {
                 Text(timer.action.isEmpty ? "Действие" : timer.action)
                     .font(.system(size: 18, weight: .semibold, design: .rounded))
                     .foregroundColor(Color("BrandTextColor"))
@@ -235,52 +272,111 @@ private struct StepTimerCard: View {
                         .transition(.opacity.combined(with: .scale))
                 } else {
                     Text(timeString(timer.remainingSeconds))
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundColor(timer.isRunning ? AppColors.accentPink : .secondary)
                         .frame(maxWidth: .infinity)
                         .multilineTextAlignment(.center)
+                        .monospacedDigit()
                         .transition(.opacity.combined(with: .scale))
                 }
 
-                Button {
-                    withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
-                        if timer.isDone {
-                            reset()
-                        } else {
-                            timer.isRunning.toggle()
+                // Две круглые кнопки
+                HStack(spacing: 24) {
+                    // Кнопка плей/пауза
+                    Button {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            if timer.isDone {
+                                resetTimer()
+                            } else {
+                                timer.isRunning.toggle()
+                                updateGlobalTimer()
+                            }
                         }
+                    } label: {
+                        Image(systemName: timer.isDone ? "arrow.counterclockwise.circle.fill" : (timer.isRunning ? "pause.circle.fill" : "play.circle.fill"))
+                            .font(.system(size: 44))
+                            .foregroundColor(timer.isDone ? .orange : AppColors.accentPurple)
                     }
-                } label: {
-                    Text(buttonTitle)
-                        .frame(maxWidth: .infinity)
-                        .multilineTextAlignment(.center)
-                }
-                .buttonStyle(PillButtonStyle())
-            }
-            .onChange(of: timer.justFinishedToken) { _, newValue in
-                if newValue != nil {
-                    withAnimation(.easeInOut(duration: 0.25)) {
-                        // переход в состояние "Готово!" уже произошёл в родителе
+                    .buttonStyle(.plain)
+
+                    // Кнопка сброса
+                    Button {
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            resetTimer()
+                        }
+                    } label: {
+                        Image(systemName: "stop.circle.fill")
+                            .font(.system(size: 44))
+                            .foregroundColor(.red)
                     }
-                    onFinished()
+                    .buttonStyle(.plain)
+                    .disabled(timer.isDone && timer.remainingSeconds == timer.totalSeconds)
                 }
+                .padding(.top, 8)
             }
         }
-        .frame(maxWidth: .infinity)
+        .onChange(of: timer.justFinishedToken) { _, newValue in
+            if newValue != nil {
+                withAnimation(.easeInOut(duration: 0.25)) {
+                    // переход в состояние "Готово!" уже произошёл в родителе
+                }
+                onFinished()
+                // Обновить глобальный таймер (остановить)
+                timerManager.stopAndHide()
+            }
+        }
+        .onChange(of: timer.isRunning) { _, newValue in
+            updateGlobalTimer()
+        }
+        .onChange(of: timer.remainingSeconds) { _, newValue in
+            updateGlobalTimer()
+        }
     }
 
-    /// Заголовок кнопки в зависимости от состояния таймера.
-    private var buttonTitle: String {
-        if timer.isDone { return "Сброс" }
-        return timer.isRunning ? "Пауза" : "Начать"
+    /// Обновляет глобальный таймер в менеджере.
+    private func updateGlobalTimer() {
+        // Всегда обновляем состояние таймера в словаре
+        let activeTimer = TimerManager.ActiveTimer(
+            recipeTitle: recipeTitle,
+            stepAction: timer.action,
+            totalSeconds: timer.totalSeconds,
+            remainingSeconds: timer.remainingSeconds,
+            isRunning: timer.isRunning,
+            stepID: timer.stepID,
+            recipeID: recipeID
+        )
+        timerManager.updateTimerState(activeTimer)
+        
+        // Если таймер запущен и не завершён, устанавливаем его как активный в глобальном менеджере
+        if timer.isRunning && !timer.isDone {
+            timerManager.setActiveTimer(
+                recipeTitle: recipeTitle,
+                stepAction: timer.action,
+                totalSeconds: timer.totalSeconds,
+                remainingSeconds: timer.remainingSeconds,
+                isRunning: true,
+                stepID: timer.stepID,
+                recipeID: recipeID
+            )
+        } else if timer.isDone || !timer.isRunning {
+            // Если таймер остановлен или завершен, не обновляем глобальный активный таймер
+            // (но состояние уже обновлено в словаре)
+        }
     }
 
     /// Сбрасывает таймер в исходное состояние.
-    private func reset() {
+    private func resetTimer() {
         timer.remainingSeconds = timer.totalSeconds
         timer.isRunning = false
         timer.isDone = false
         timer.justFinishedToken = nil
+        // Сбросить глобальный таймер, если этот таймер активен
+        if timerManager.activeTimer?.stepID == timer.stepID {
+            timerManager.reset()
+        } else {
+            // Обновить состояние в словаре
+            updateGlobalTimer()
+        }
     }
 
     /// Форматирует секунды в строку "мм:сс".

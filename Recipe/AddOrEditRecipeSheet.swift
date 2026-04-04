@@ -4,6 +4,7 @@ import SwiftUI
 /// Содержит все поля, которые пользователь может редактировать в форме.
 struct RecipeDraft: Equatable {
     var title: String = ""
+    var link: String = ""
     var detailsText: String = ""
     var category: RecipeCategory = .all
     var ingredients: [Ingredient] = []
@@ -43,6 +44,7 @@ struct AddOrEditRecipeSheet: View {
             }
             _draft = State(initialValue: RecipeDraft(
                 title: existing.title ?? "",
+                link: existing.link ?? "",
                 detailsText: existing.detailsText ?? "",
                 category: cat,
                 ingredients: existing.ingredients,
@@ -65,7 +67,8 @@ struct AddOrEditRecipeSheet: View {
                     CardContainer {
                         VStack(spacing: 12) {
                             CenteredField(title: "Название", text: $draft.title)
-                            CenteredField(title: "Описание/Ссылка", text: $draft.detailsText, axis: .vertical)
+                            CenteredField(title: "Ссылка", text: $draft.link)
+                            CenteredField(title: "Описание/Комментарий", text: $draft.detailsText, axis: .vertical)
 
                             VStack(spacing: 8) {
                                 Text("Категория")
@@ -103,7 +106,7 @@ struct AddOrEditRecipeSheet: View {
                                     return
                                 }
                                 withAnimation(.easeInOut(duration: 0.2)) {
-                                    draft.ingredients.append(Ingredient(name: "", grams: 0))
+                                    draft.ingredients.append(Ingredient(name: "", quantity: 0, unit: .grams))
                                 }
                             } label: {
                                 Text("Добавить ингредиент")
@@ -202,7 +205,7 @@ struct AddOrEditRecipeSheet: View {
         out.title = input.title.trimmingCharacters(in: .whitespacesAndNewlines)
         out.detailsText = input.detailsText.trimmingCharacters(in: .whitespacesAndNewlines)
         out.ingredients = input.ingredients
-            .map { Ingredient(id: $0.id, name: $0.name.trimmingCharacters(in: .whitespacesAndNewlines), grams: max(0, $0.grams)) }
+            .map { Ingredient(id: $0.id, name: $0.name.trimmingCharacters(in: .whitespacesAndNewlines), quantity: max(0, $0.quantity), unit: $0.unit) }
             .filter { !$0.name.isEmpty }
         out.steps = input.steps
             .map { CookingStep(id: $0.id, action: $0.action.trimmingCharacters(in: .whitespacesAndNewlines), minutes: max(1, $0.minutes)) }
@@ -261,7 +264,6 @@ private struct CenteredField: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
-                .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.none)
                 .textContentType(.none)
@@ -273,8 +275,13 @@ private struct CenteredField: View {
 /// Позволяет ввести название и количество, а также переключаться между граммами, столовыми ложками и штуками.
 private struct IngredientEditorRow: View {
     @Binding var ingredient: Ingredient
-    @State private var unit: QuantityUnit = .grams
+    @State private var unit: QuantityUnit
     @State private var quantityText: String = ""
+
+    init(ingredient: Binding<Ingredient>) {
+        self._ingredient = ingredient
+        _unit = State(initialValue: ingredient.wrappedValue.unit)
+    }
 
     var body: some View {
         VStack(spacing: 10) {
@@ -286,7 +293,6 @@ private struct IngredientEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
-                .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.none)
                 .textContentType(.none)
@@ -304,13 +310,12 @@ private struct IngredientEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
-                .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.none)
                 .textContentType(.none)
 
                 Button {
-                    toggleUnitAndConvert()
+                    toggleUnit()
                 } label: {
                     Text(unit.rawValue)
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
@@ -330,75 +335,88 @@ private struct IngredientEditorRow: View {
             }
         }
         .onAppear {
-            unit = .grams
             quantityText = ""
         }
         .onChange(of: quantityText) { _, newValue in
             if let value = parse(newValue) {
-                ingredient.grams = unit == .grams ? value : UnitConverter.tbspToGrams(value)
+                // Сохраняем quantity в выбранной единице
+                ingredient.quantity = value
+                ingredient.unit = unit
             }
+        }
+        .onChange(of: ingredient.unit) { _, newUnit in
+            // Если unit изменился извне (редко), синхронизируем
+            unit = newUnit
         }
     }
 
     /// Отформатированное значение количества в текущей единице измерения.
     private var formattedDefault: String {
-        let base = ingredient.grams
-        let value: Double
-        switch unit {
-        case .grams:
-            value = base
-        case .tbsp:
-            value = UnitConverter.gramsToTbsp(base)
-        case .pieces:
-            value = UnitConverter.gramsToPieces(base)
-        }
+        let value = ingredient.unit == unit ? ingredient.quantity : convertedQuantity()
         if value == 0 { return "" }
         return format(value)
     }
+    
+    /// Конвертирует количество ингредиента в текущую единицу измерения.
+    private func convertedQuantity() -> Double {
+        let grams: Double
+        switch ingredient.unit {
+        case .grams:
+            grams = ingredient.quantity
+        case .tbsp:
+            grams = UnitConverter.tbspToGrams(ingredient.quantity)
+        case .pieces:
+            grams = UnitConverter.piecesToGrams(ingredient.quantity)
+        }
+        switch unit {
+        case .grams:
+            return grams
+        case .tbsp:
+            return UnitConverter.gramsToTbsp(grams)
+        case .pieces:
+            return UnitConverter.gramsToPieces(grams)
+        }
+    }
 
     /// Переключает единицу измерения и конвертирует значение.
-    private func toggleUnitAndConvert() {
-        let currentValue: Double
-        if let parsed = parse(quantityText.isEmpty ? formattedDefault : quantityText) {
-            currentValue = parsed
-        } else {
-            // берём значение из хранимых граммов
-            switch unit {
-            case .grams:
-                currentValue = ingredient.grams
-            case .tbsp:
-                currentValue = UnitConverter.gramsToTbsp(ingredient.grams)
-            case .pieces:
-                currentValue = UnitConverter.gramsToPieces(ingredient.grams)
-            }
+    private func toggleUnit() {
+        let currentQuantity = parse(quantityText.isEmpty ? formattedDefault : quantityText) ?? ingredient.quantity
+        let grams: Double
+        switch unit {
+        case .grams:
+            grams = currentQuantity
+        case .tbsp:
+            grams = UnitConverter.tbspToGrams(currentQuantity)
+        case .pieces:
+            grams = UnitConverter.piecesToGrams(currentQuantity)
         }
-
+        
         withAnimation(.easeInOut(duration: 0.2)) {
             // цикл: граммы → ложки → штуки → граммы
             switch unit {
             case .grams:
                 unit = .tbsp
-                quantityText = format(UnitConverter.gramsToTbsp(ingredient.grams))
             case .tbsp:
                 unit = .pieces
-                let grams = UnitConverter.tbspToGrams(currentValue)
-                quantityText = format(UnitConverter.gramsToPieces(grams))
             case .pieces:
                 unit = .grams
-                let grams = UnitConverter.piecesToGrams(currentValue)
-                quantityText = format(grams)
             }
-        }
-
-        if let value = parse(quantityText) {
+            
+            // Вычисляем новое количество в новой единице
+            let newQuantity: Double
             switch unit {
             case .grams:
-                ingredient.grams = value
+                newQuantity = grams
             case .tbsp:
-                ingredient.grams = UnitConverter.tbspToGrams(value)
+                newQuantity = UnitConverter.gramsToTbsp(grams)
             case .pieces:
-                ingredient.grams = UnitConverter.piecesToGrams(value)
+                newQuantity = UnitConverter.gramsToPieces(grams)
             }
+            quantityText = format(newQuantity)
+            
+            // Обновляем ингредиент
+            ingredient.quantity = newQuantity
+            ingredient.unit = unit
         }
     }
 
@@ -429,14 +447,13 @@ private struct StepEditorRow: View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
                 .gradientInputField()
-                .tint(.accentColor)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.none)
                 .textContentType(.none)
             
             Text("Время в минутах")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundColor(AppColors.textSecondary)
+                .foregroundColor(.secondary)
                 .frame(maxWidth: .infinity, alignment: .center)
                 .multilineTextAlignment(.center)
 
@@ -452,7 +469,6 @@ private struct StepEditorRow: View {
             .frame(maxWidth: .infinity, alignment: .center)
             .multilineTextAlignment(.center)
             .gradientInputField()
-            .tint(.accentColor)
             .autocorrectionDisabled()
             .textInputAutocapitalization(.none)
             .textContentType(.none)
