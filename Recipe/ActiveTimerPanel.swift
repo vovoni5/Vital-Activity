@@ -27,11 +27,18 @@ struct ActiveTimerPanel: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     
-                    // Время
-                    Text(timer.timeString)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(timer.isRunning ? AppColors.accentPink : .secondary)
-                        .monospacedDigit()
+                    // Время или "Готово!"
+                    if timer.isDone {
+                        Text("Готово!")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.green)
+                            .monospacedDigit()
+                    } else {
+                        Text(timer.timeString)
+                            .font(.system(size: 28, weight: .bold, design: .rounded))
+                            .foregroundColor(timer.isRunning ? AppColors.accentPink : .secondary)
+                            .monospacedDigit()
+                    }
                     
                     // Кнопки управления
                     HStack(spacing: 8) {

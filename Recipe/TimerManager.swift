@@ -40,6 +40,11 @@ final class TimerManager: ObservableObject {
             guard totalSeconds > 0 else { return 0.0 }
             return 1.0 - Double(remainingSeconds) / Double(totalSeconds)
         }
+        
+        /// Флаг завершения таймера.
+        var isDone: Bool {
+            remainingSeconds == 0
+        }
     }
     
     private var timerSubscription: Cancellable?
@@ -78,11 +83,11 @@ final class TimerManager: ObservableObject {
         if var timer = activeTimer {
             timer.isRunning = false
             timerStates[timer.stepID] = timer
+            activeTimer = timer // обновляем, но не обнуляем
         }
         timerSubscription?.cancel()
         timerSubscription = nil
-        activeTimer = nil
-        isTimerPanelHidden = true
+        // Не скрываем панель, чтобы отображать "Готово"
     }
     
     /// Переключает состояние паузы/возобновления активного таймера.

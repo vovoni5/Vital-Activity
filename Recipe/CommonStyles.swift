@@ -217,8 +217,8 @@ struct TimerContainer<Content: View>: View {
         content
             .padding(16)
             .frame(maxWidth: .infinity)
-            .glassEffect(.clear.tint(.white.opacity(0.0)), in: .rect(cornerRadius: 20))
-            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 0, y: 2)
+            .glassEffect(.regular.tint(.orange.opacity(0.0)), in: .rect(cornerRadius: 20))
+            .shadow(color: Color.black.opacity(0.08), radius: 6, x: 4, y: 4)
     }
 }
 

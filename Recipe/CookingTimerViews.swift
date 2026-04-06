@@ -286,14 +286,17 @@ private struct StepTimerCard: View {
                     Button {
                         withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
                             if timer.isDone {
+                                // При завершении таймера сбросить и запустить заново
                                 resetTimer()
+                                timer.isRunning = true
+                                updateGlobalTimer()
                             } else {
                                 timer.isRunning.toggle()
                                 updateGlobalTimer()
                             }
                         }
                     } label: {
-                        Image(systemName: timer.isDone ? "arrow.counterclockwise.circle.fill" : (timer.isRunning ? "pause.circle.fill" : "play.circle.fill"))
+                        Image(systemName: timer.isDone ? "play.circle.fill" : (timer.isRunning ? "pause.circle.fill" : "play.circle.fill"))
                             .font(.system(size: 44))
                             .foregroundColor(timer.isDone ? .orange : AppColors.accentPurple)
                     }
@@ -305,9 +308,9 @@ private struct StepTimerCard: View {
                             resetTimer()
                         }
                     } label: {
-                        Image(systemName: "stop.circle.fill")
+                        Image(systemName: "arrow.counterclockwise.circle.fill")
                             .font(.system(size: 44))
-                            .foregroundColor(.red)
+                            .foregroundColor(.orange)
                     }
                     .buttonStyle(.plain)
                     .disabled(timer.isDone && timer.remainingSeconds == timer.totalSeconds)
