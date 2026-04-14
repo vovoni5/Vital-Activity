@@ -86,8 +86,9 @@ struct RecipeDetailView: View {
                                     .accessibilityLabel("Добавьте ингредиенты в режиме редактирования")
                             } else {
                                 VStack(spacing: 10) {
-                                    ForEach(recipe.ingredients) { ing in
+                                    ForEach(Array(recipe.ingredients.enumerated()), id: \.element.id) { index, ing in
                                         IngredientReadOnlyRow(ingredient: ing)
+                                            .staggeredList(index: index, totalCount: recipe.ingredients.count)
                                     }
                                 }
                                 .accessibilityElement(children: .contain)
@@ -114,8 +115,9 @@ struct RecipeDetailView: View {
                                     .accessibilityLabel("Добавьте действия и время — тогда появятся таймеры")
                             } else {
                                 VStack(spacing: 10) {
-                                    ForEach(recipe.steps) { step in
+                                    ForEach(Array(recipe.steps.enumerated()), id: \.element.id) { index, step in
                                         StepReadOnlyRow(step: step)
+                                            .staggeredList(index: index, totalCount: recipe.steps.count)
                                     }
                                 }
                                 .accessibilityElement(children: .contain)

@@ -30,7 +30,7 @@ struct MenuPlannerListView: View {
                 .padding(.top, 18)
 
                 List {
-                    ForEach(plans, id: \.objectID) { plan in
+                    ForEach(Array(plans.enumerated()), id: \.element.objectID) { index, plan in
                         NavigationLink {
                             MealPlanDetailView(plan: plan)
                         } label: {
@@ -56,6 +56,7 @@ struct MenuPlannerListView: View {
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                         .listRowBackground(Color.clear)
+                        .staggeredList(index: index, totalCount: plans.count)
                     }
 
                     if plans.isEmpty {

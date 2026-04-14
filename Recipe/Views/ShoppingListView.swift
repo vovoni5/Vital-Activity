@@ -125,7 +125,7 @@ struct ShoppingListView: View {
     private var listView: some View {
         ScrollView {
             VStack(spacing: 0) {
-                ForEach(viewModel.sortedCategories, id: \.self) { category in
+                ForEach(Array(viewModel.sortedCategories.enumerated()), id: \.element) { categoryIndex, category in
                     VStack(alignment: .leading, spacing: 12) {
                         Text(category)
                             .font(.custom(AppFonts.title, size: 20))
@@ -134,13 +134,14 @@ struct ShoppingListView: View {
                             .padding(.top, 24)
                         
                         VStack(spacing: 8) {
-                            ForEach(viewModel.items(for: category)) { item in
+                            ForEach(Array(viewModel.items(for: category).enumerated()), id: \.element.id) { itemIndex, item in
                                 ShoppingItemRow(item: item) {
                                     viewModel.togglePurchased(for: item)
                                 } onDelete: {
                                     viewModel.deleteItem(item)
                                 }
                                 .padding(.horizontal, 16)
+                                .staggeredList(index: categoryIndex * 10 + itemIndex, totalCount: viewModel.items.count)
                             }
                             
                         }
@@ -149,6 +150,7 @@ struct ShoppingListView: View {
                         .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 4)
                         .padding(.horizontal, 16)
                     }
+                    .staggeredList(index: categoryIndex, totalCount: viewModel.sortedCategories.count)
                 }
             }
             .padding(.vertical, 16)
@@ -254,15 +256,17 @@ private struct ShoppingItemRow: View {
                 Image(systemName: item.isPurchased ? "checkmark.circle.fill" : "circle")
                     .foregroundColor(item.isPurchased ? .green : AppColors.textSecondary)
                     .imageScale(.large)
+                    .scaleEffect(item.isPurchased ? 1.1 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.isPurchased)
             }
-            
             .buttonStyle(.plain)
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
                     .font(.custom(AppFonts.subtitle, size: 17))
                     .strikethrough(item.isPurchased, color: .secondary)
-                    .foregroundColor(.primary)
+                    .foregroundColor(item.isPurchased ? .secondary : .primary)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.isPurchased)
                 Text(item.formattedQuantity)
                     .font(.custom(AppFonts.numeric, size: 14))
                     .foregroundColor(AppColors.textSecondary)
@@ -281,6 +285,7 @@ private struct ShoppingItemRow: View {
         .glassEffect(.clear)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.03), radius: 2, x: 0, y: 1)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: item.isPurchased)
     }
 }
 

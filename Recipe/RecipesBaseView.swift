@@ -172,12 +172,13 @@ private struct RecipesList: View {
 
     var body: some View {
         List {
-            ForEach(recipes, id: \.objectID) { recipe in
+            ForEach(Array(recipes.enumerated()), id: \.element.objectID) { index, recipe in
                 RecipeRow(
                     recipe: recipe,
                     onDeleteRequest: { onDeleteRequest(recipe) },
                     onAddToPlanRequest: { onAddToPlanRequest(recipe) }
                 )
+                .staggeredList(index: index, totalCount: recipes.count)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 12, trailing: 16))
                 .listRowBackground(Color.clear)

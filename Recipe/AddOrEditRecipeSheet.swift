@@ -96,8 +96,9 @@ struct AddOrEditRecipeSheet: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .multilineTextAlignment(.center)
 
-                            ForEach($draft.ingredients) { $ing in
-                                IngredientEditorRow(ingredient: $ing)
+                            ForEach(Array(draft.ingredients.enumerated()), id: \.element.id) { index, ing in
+                                IngredientEditorRow(ingredient: $draft.ingredients[index])
+                                    .staggeredList(index: index, totalCount: draft.ingredients.count)
                             }
 
                             Button {
@@ -125,8 +126,9 @@ struct AddOrEditRecipeSheet: View {
                                 .frame(maxWidth: .infinity, alignment: .center)
                                 .multilineTextAlignment(.center)
 
-                            ForEach($draft.steps) { $step in
-                                StepEditorRow(step: $step)
+                            ForEach(Array(draft.steps.enumerated()), id: \.element.id) { index, step in
+                                StepEditorRow(step: $draft.steps[index])
+                                    .staggeredList(index: index, totalCount: draft.steps.count)
                             }
                             
 

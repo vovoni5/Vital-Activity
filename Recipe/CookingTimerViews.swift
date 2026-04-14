@@ -29,7 +29,7 @@ struct CookingTimerRootView: View {
 
                 ScrollView {
                     LazyVStack(spacing: 12) {
-                        ForEach(recipes, id: \.objectID) { recipe in
+                        ForEach(Array(recipes.enumerated()), id: \.element.objectID) { index, recipe in
                             NavigationLink {
                                 CookingTimerRecipeView(recipe: recipe)
                             } label: {
@@ -42,6 +42,7 @@ struct CookingTimerRootView: View {
                                 }
                             }
                             .buttonStyle(.plain)
+                            .staggeredList(index: index, totalCount: recipes.count)
                         }
 
                         if recipes.isEmpty {

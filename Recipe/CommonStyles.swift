@@ -86,22 +86,22 @@ struct BeautifulTextStyle: ViewModifier {
 // MARK: - Анимации появления
 
 /// Модификатор для плавного появления экрана.
-/// Плавное изменение прозрачности и смещения.
+/// Использует пружинную анимацию с небольшим смещением для современного вида.
 struct ScreenAppearModifier: ViewModifier {
     @State private var isVisible = false
 
     func body(content: Content) -> some View {
         content
             .opacity(isVisible ? 1 : 0)
-            .offset(y: isVisible ? 0 : 20)
-            .animation(.easeOut(duration: 0.35), value: isVisible)
+            .offset(y: isVisible ? 0 : 24)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.5), value: isVisible)
             .onAppear {
-                withAnimation(.easeOut(duration: 0.35)) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.5)) {
                     isVisible = true
                 }
             }
             .onDisappear {
-                withAnimation(.easeOut(duration: 0.25)) {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.8, blendDuration: 0.5)) {
                     isVisible = false
                 }
             }
@@ -109,19 +109,47 @@ struct ScreenAppearModifier: ViewModifier {
 }
 
 /// Модификатор для плавного появления текста.
-/// Легкое масштабирование и изменение прозрачности.
+/// Легкое масштабирование и изменение прозрачности с пружинной анимацией.
 struct TextAppearModifier: ViewModifier {
     @State private var isVisible = false
+    var delay: Double = 0.2
 
     func body(content: Content) -> some View {
         content
             .opacity(isVisible ? 1 : 0)
-            .scaleEffect(isVisible ? 1 : 0.9)
-            .offset(y: isVisible ? 0 : 10)
-            .animation(.spring(response: 0.4, dampingFraction: 0.7, blendDuration: 0.5), value: isVisible)
+            .scaleEffect(isVisible ? 1 : 0.92)
+            .offset(y: isVisible ? 0 : 12)
+            .animation(.spring(response: 0.35, dampingFraction: 0.7, blendDuration: 0.5), value: isVisible)
             .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                    withAnimation {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation(.spring(response: 0.35, dampingFraction: 0.7, blendDuration: 0.5)) {
+                        isVisible = true
+                    }
+                }
+            }
+    }
+}
+
+/// Модификатор для ступенчатого появления элементов списка.
+/// Каждый элемент появляется с небольшой задержкой относительно индекса.
+struct StaggeredListModifier: ViewModifier {
+    let index: Int
+    let totalCount: Int
+    let baseDelay: Double = 0.03
+    let verticalOffset: CGFloat = 12
+    let scaleFrom: CGFloat = 0.95
+    @State private var isVisible = false
+    
+    func body(content: Content) -> some View {
+        content
+            .opacity(isVisible ? 1 : 0)
+            .offset(y: isVisible ? 0 : verticalOffset)
+            .scaleEffect(isVisible ? 1 : scaleFrom)
+            .animation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.5), value: isVisible)
+            .onAppear {
+                let delay = baseDelay * Double(index)
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8, blendDuration: 0.5)) {
                         isVisible = true
                     }
                 }
@@ -132,7 +160,7 @@ struct TextAppearModifier: ViewModifier {
 // MARK: - Компоненты
 
 /// Стиль кнопки в виде капсулы с градиентом.
-/// Реагирует на нажатие анимацией масштаба и тени.
+/// Реагирует на нажатие анимацией масштаба, тени и прозрачности.
 struct PillButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         let gradient = LinearGradient(
@@ -150,15 +178,15 @@ struct PillButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity)
             .padding(.vertical, 14)
             .background(
-                gradient.opacity(0.6)
+                gradient.opacity(configuration.isPressed ? 0.8 : 0.6)
             )
             .cornerRadius(26)
-            .shadow(color: AppColors.textPrimary.opacity(configuration.isPressed ? 0.08 : 0.4),
-                    radius: configuration.isPressed ? 4 : 4,
+            .shadow(color: AppColors.textPrimary.opacity(configuration.isPressed ? 0.12 : 0.4),
+                    radius: configuration.isPressed ? 6 : 8,
                     x: 4,
-                    y: configuration.isPressed ? 2 : 3)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.spring(response: 0.25, dampingFraction: 0.8), value: configuration.isPressed)
+                    y: configuration.isPressed ? 1 : 3)
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.spring(response: 0.2, dampingFraction: 0.7), value: configuration.isPressed)
     }
 }
 
@@ -263,6 +291,14 @@ extension View {
     /// Оборачивает контент в контейнер таймера (белый фон, тень, закругления).
     func timerContainer() -> some View {
         TimerContainer { self }
+    }
+    
+    /// Применяет ступенчатую анимацию появления для элемента списка.
+    /// - Parameters:
+    ///   - index: индекс элемента (начиная с 0).
+    ///   - totalCount: общее количество элементов (для вычисления максимальной задержки).
+    func staggeredList(index: Int, totalCount: Int) -> some View {
+        modifier(StaggeredListModifier(index: index, totalCount: totalCount))
     }
 }
 
