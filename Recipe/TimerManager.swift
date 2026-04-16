@@ -48,6 +48,7 @@ final class TimerManager: ObservableObject {
     }
     
     private var timerSubscription: Cancellable?
+    private var notificationManager = NotificationManager.shared
     
     private init() {}
     
@@ -65,6 +66,15 @@ final class TimerManager: ObservableObject {
         activeTimer = timer
         timerStates[stepID] = timer
         isTimerPanelHidden = false
+        
+        // Планируем уведомление, если таймер запущен
+        if isRunning && remainingSeconds > 0 {
+            scheduleNotification(for: timer)
+        } else {
+            // Отменяем уведомление, если таймер не запущен
+            cancelNotification(for: stepID, recipeID: recipeID)
+        }
+        
         startTimerIfNeeded()
     }
     
@@ -84,6 +94,9 @@ final class TimerManager: ObservableObject {
             timer.isRunning = false
             timerStates[timer.stepID] = timer
             activeTimer = timer // обновляем, но не обнуляем
+            
+            // Отменяем уведомление при остановке
+            cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
         }
         timerSubscription?.cancel()
         timerSubscription = nil
@@ -93,12 +106,18 @@ final class TimerManager: ObservableObject {
     /// Переключает состояние паузы/возобновления активного таймера.
     func togglePause() {
         guard var timer = activeTimer else { return }
+        let wasRunning = timer.isRunning
         timer.isRunning.toggle()
         activeTimer = timer
         timerStates[timer.stepID] = timer
+        
         if timer.isRunning {
+            // Возобновление: планируем уведомление
+            scheduleNotification(for: timer)
             startTimerIfNeeded()
         } else {
+            // Пауза: отменяем уведомление
+            cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
             timerSubscription?.cancel()
             timerSubscription = nil
         }
@@ -113,10 +132,17 @@ final class TimerManager: ObservableObject {
         timerStates[timer.stepID] = timer
         timerSubscription?.cancel()
         timerSubscription = nil
+        
+        // Отменяем уведомление при сбросе
+        cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
     }
     
     /// Закрывает панель таймера и сбрасывает таймер.
     func closePanel() {
+        // Отменяем уведомление перед сбросом
+        if let timer = activeTimer {
+            cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
+        }
         reset()
         isTimerPanelHidden = true
     }
@@ -151,14 +177,19 @@ final class TimerManager: ObservableObject {
         timerStates[timer.stepID] = timer
         
         if timer.remainingSeconds <= 0 {
-            // Таймер завершился
+            // Таймер завершился естественным образом
             timer.isRunning = false
             activeTimer = timer
             timerStates[timer.stepID] = timer
             timerSubscription?.cancel()
             timerSubscription = nil
+            
             // Воспроизвести звуковой сигнал
             playCompletionSound()
+            
+            // Уведомление сработает автоматически по запланированному времени
+            // Не отменяем его, так как оно должно показаться пользователю
+            print("Таймер завершился естественно, уведомление должно сработать")
         }
     }
     
@@ -172,5 +203,73 @@ final class TimerManager: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             AudioServicesPlaySystemSound(soundID)
         }
+    }
+    
+    // MARK: - Управление уведомлениями
+    
+    /// Планирует уведомление о завершении шага.
+    private func scheduleNotification(for timer: ActiveTimer) {
+        notificationManager.scheduleStepNotification(
+            stepAction: timer.stepAction,
+            recipeTitle: timer.recipeTitle,
+            durationSeconds: timer.remainingSeconds,
+            stepID: timer.stepID,
+            recipeID: timer.recipeID
+        ) { success in
+            if success {
+                print("Уведомление успешно запланировано для шага '\(timer.stepAction)'")
+            } else {
+                print("Не удалось запланировать уведомление для шага '\(timer.stepAction)'")
+            }
+        }
+    }
+    
+    /// Отменяет уведомление для указанного шага.
+    private func cancelNotification(for stepID: UUID, recipeID: NSManagedObjectID) {
+        notificationManager.cancelStepNotification(stepID: stepID, recipeID: recipeID)
+    }
+    
+    /// Отменяет все уведомления для активного таймера.
+    func cancelActiveTimerNotification() {
+        guard let timer = activeTimer else { return }
+        cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
+    }
+    
+    /// Обновляет уведомление при паузе/возобновлении таймера.
+    private func updateNotificationForTimerState(_ timer: ActiveTimer) {
+        if timer.isRunning && timer.remainingSeconds > 0 {
+            // Перепланируем уведомление с новым временем
+            cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
+            scheduleNotification(for: timer)
+        } else {
+            // Отменяем уведомление
+            cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
+        }
+    }
+    
+    /// Вызывается при паузе таймера - отменяет уведомление.
+    func pauseTimer() {
+        guard var timer = activeTimer else { return }
+        timer.isRunning = false
+        activeTimer = timer
+        timerStates[timer.stepID] = timer
+        timerSubscription?.cancel()
+        timerSubscription = nil
+        
+        // Отменяем уведомление при паузе
+        cancelNotification(for: timer.stepID, recipeID: timer.recipeID)
+    }
+    
+    /// Вызывается при возобновлении таймера - перепланирует уведомление.
+    func resumeTimer() {
+        guard var timer = activeTimer else { return }
+        timer.isRunning = true
+        activeTimer = timer
+        timerStates[timer.stepID] = timer
+        
+        // Планируем новое уведомление
+        scheduleNotification(for: timer)
+        
+        startTimerIfNeeded()
     }
 }

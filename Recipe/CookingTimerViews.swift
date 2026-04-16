@@ -31,7 +31,7 @@ struct CookingTimerRootView: View {
                     LazyVStack(spacing: 12) {
                         ForEach(Array(recipes.enumerated()), id: \.element.objectID) { index, recipe in
                             NavigationLink {
-                                CookingTimerRecipeView(recipe: recipe)
+                                CookingTimerRecipeView(recipe: recipe, highlightStepID: nil)
                             } label: {
                                 CardContainer {
                                     Text(recipe.title ?? "")
@@ -77,10 +77,13 @@ struct CookingTimerRootView: View {
 struct CookingTimerRecipeView: View {
     @ObservedObject var recipe: RecipeEntity
     @EnvironmentObject private var timerManager: TimerManager
+    var highlightStepID: UUID? // Опциональный ID шага для подсветки (например, при открытии из уведомления)
 
     @State private var timers: [StepTimerState] = []
     @State private var timerSubscription: Cancellable?
     @State private var anyTimerRunning: Bool = false
+    @State private var scrollToStepID: UUID?
+    @State private var hasHighlightedStep = false
 
     var body: some View {
         ZStack {
@@ -106,7 +109,8 @@ struct CookingTimerRecipeView: View {
                                 recipeID: recipe.objectID,
                                 onFinished: {
                                     playTripleBeep()
-                                }
+                                },
+                                isHighlighted: highlightStepID == timer.stepID && hasHighlightedStep
                             )
                             .onChange(of: timer.isRunning) { _, newValue in
                                 updateTimerSubscription()
@@ -139,6 +143,19 @@ struct CookingTimerRecipeView: View {
         .onAppear {
             resetTimers()
             updateTimerSubscription()
+            
+            // Обработка подсветки шага при открытии из уведомления
+            if let highlightStepID = highlightStepID, !hasHighlightedStep {
+                // Устанавливаем флаг, чтобы не подсвечивать повторно
+                hasHighlightedStep = true
+                scrollToStepID = highlightStepID
+                
+                // Можно добавить анимацию или визуальное выделение
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    // Сбрасываем scrollToStepID после обработки
+                    scrollToStepID = nil
+                }
+            }
         }
         .onDisappear {
             timerSubscription?.cancel()
@@ -246,12 +263,18 @@ private struct StepTimerCard: View {
     var recipeTitle: String
     var recipeID: NSManagedObjectID
     var onFinished: () -> Void
+    var isHighlighted: Bool = false // Подсветка шага (например, при открытии из уведомления)
     @EnvironmentObject private var timerManager: TimerManager
 
     @State private var finishedPulse = false
 
     var body: some View {
         TimerContainer {
+            if isHighlighted {
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.accentColor, lineWidth: 3)
+                    .padding(-4)
+            }
             VStack(spacing: 16) {
                 Text(timer.action.isEmpty ? "Действие" : timer.action)
                     .font(.system(size: 18, weight: .semibold, design: .rounded))

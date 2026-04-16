@@ -7,6 +7,8 @@ struct ContentView: View {
     @State private var showSplash: Bool = true
     @State private var showMain: Bool = false
     @State private var pendingRecipeObjectID: NSManagedObjectID?
+    @State private var notificationStepID: UUID?
+    @State private var notificationRecipeIDURL: URL?
 
     var body: some View {
         ZStack {
@@ -24,7 +26,11 @@ struct ContentView: View {
                             isPresented: Binding(
                                 get: { pendingRecipeObjectID != nil },
                                 set: { isActive in
-                                    if !isActive { pendingRecipeObjectID = nil }
+                                    if !isActive {
+                                        pendingRecipeObjectID = nil
+                                        notificationStepID = nil
+                                        notificationRecipeIDURL = nil
+                                    }
                                 }
                             )
                         ) {
@@ -58,13 +64,26 @@ struct ContentView: View {
                 pendingRecipeObjectID = id
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: Notification.Name("OpenRecipeFromNotification"))) { notif in
+            // Обработка нажатия на локальное уведомление
+            if let recipeIDURL = notif.userInfo?["recipeIDURL"] as? URL,
+               let stepID = notif.userInfo?["stepID"] as? UUID {
+                notificationRecipeIDURL = recipeIDURL
+                notificationStepID = stepID
+                
+                // Пытаемся получить NSManagedObjectID из URL
+                if let objectID = viewContext.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: recipeIDURL) {
+                    pendingRecipeObjectID = objectID
+                }
+            }
+        }
     }
 
     @ViewBuilder
     private func destinationTimerView() -> some View {
         if let objectID = pendingRecipeObjectID,
            let recipe = try? viewContext.existingObject(with: objectID) as? RecipeEntity {
-            CookingTimerRecipeView(recipe: recipe)
+            CookingTimerRecipeView(recipe: recipe, highlightStepID: notificationStepID)
         } else {
             EmptyView()
         }
