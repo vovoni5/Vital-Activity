@@ -1,7 +1,7 @@
 # Recipe App – Приложение для управления рецептами
 
 <div align="center">
-  <img src="assets/Логотип.png" alt="Логотип Recipe App" width="300">
+  <img src="assets/logo.png" alt="Логотип Recipe App" width="300">
 </div>
 
 Полнофункциональное iOS-приложение для создания, хранения и приготовления рецептов с интегрированным таймером, планированием питания и локальным хранилищем на Core Data.
@@ -86,22 +86,22 @@
 
 <div align="center">
   <strong>Главное меню (светлая и тёмная темы)</strong><br>
-  <img src="assets/Главное меню.PNG" alt="Главное меню светлая тема" width="200">
-  <img src="assets/Главное меню Dark.PNG" alt="Главное меню тёмная тема" width="200">
+  <img src="assets/main_menu.png" alt="Главное меню светлая тема" width="200">
+  <img src="assets/main_menu_dark.png" alt="Главное меню тёмная тема" width="200">
 </div>
 
 <div align="center">
   <strong>Список рецептов (светлая и тёмная темы)</strong><br>
-  <img src="assets/Список рецептов.PNG" alt="Список рецептов светлая тема" width="200">
-  <img src="assets/Список рецептов Dark.PNG" alt="Список рецептов тёмная тема" width="200">
+  <img src="assets/recipes_list.png" alt="Список рецептов светлая тема" width="200">
+  <img src="assets/recipes_list_dark.png" alt="Список рецептов тёмная тема" width="200">
 </div>
 
 - **RecipeDetailView.swift** – полная информация о рецепте, редактирование
 
 <div align="center">
   <strong>Меню рецепта (светлая и тёмная темы)</strong><br>
-  <img src="assets/Меню рецепта.PNG" alt="Меню рецепта светлая тема" width="200">
-  <img src="assets/Меню рецепта Dark.PNG" alt="Меню рецепта тёмная тема" width="200">
+  <img src="assets/recipe_menu.png" alt="Меню рецепта светлая тема" width="200">
+  <img src="assets/recipe_menu_dark.png" alt="Меню рецепта тёмная тема" width="200">
 </div>
 
 - **AddOrEditRecipeSheet.swift** – форма создания/редактирования рецепта
@@ -109,8 +109,8 @@
 
 <div align="center">
   <strong>Приветственный экран (светлая и тёмная темы)</strong><br>
-  <img src="assets/Приветственный экран.PNG" alt="Приветственный экран светлая тема" width="200">
-  <img src="assets/Приветственный экран Dark.PNG" alt="Приветственный экран тёмная тема" width="200">
+  <img src="assets/welcome_screen.png" alt="Приветственный экран светлая тема" width="200">
+  <img src="assets/welcome_screen_dark.png" alt="Приветственный экран тёмная тема" width="200">
 </div>
 
 ### Таймер приготовления
@@ -120,8 +120,8 @@
 
 <div align="center">
   <strong>Таймеры приготовления (светлая и тёмная темы)</strong><br>
-  <img src="assets/Таймеры.PNG" alt="Таймеры светлая тема" width="200">
-  <img src="assets/Таймеры Dark.png" alt="Таймеры тёмная тема" width="200">
+  <img src="assets/timers.png" alt="Таймеры светлая тема" width="200">
+  <img src="assets/timers_dark.png" alt="Таймеры тёмная тема" width="200">
 </div>
 
 ### Планирование питания
